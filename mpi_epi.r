@@ -269,8 +269,8 @@ epi_data <- filebacked.big.matrix(
   nrow = nrow(TRAN),
   ncol = ncol(combos)+2*nmar+ncol(Y),
   type = "double", # char是c++的单个字符
-  backingfile = "epi_data.bin", 
-  backingpath = dirname("epi_data"), 
+  backingfile = "epi_data.bin",
+  backingpath = dirname("epi_data"),
   descriptorfile = "epi_data.des",
   dimnames = c(NULL, NULL)
 )
