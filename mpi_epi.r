@@ -1,6 +1,7 @@
 rm(list = ls())
 gc()
-setwd("/mnt/f/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test")
+setwd("~/test")
+# setwd("/mnt/f/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test")
 
 library(rbenchmark) # benchmark
 library(bench)
@@ -282,9 +283,10 @@ epi1 <- convertRMatrixToArmaMat(epi1)
 epi2 <- convertRMatrixToArmaMat(epi2)
 TRAN <- convertRMatrixToArmaMat(TRAN)
 
+# 预计算lm需要的数据
 tryCatch({
   ca_epi_data(epi_data@address, combos@address, epi1, epi2, TRAN, 
-              Y, trdata1,trdata2, threads = 1)
+              Y, trdata1,trdata2, threads = 4)
 }, error = function(e) {
   print(e)
 })
