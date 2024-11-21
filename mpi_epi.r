@@ -8,12 +8,12 @@ library(bench)
 # install.packages("combinat")                   # Install combinat package
 # library("combinat") 
 library(Rcpp)
-library(data.table)
-library(foreach)
-library(doParallel)
+# library(data.table)
+# library(foreach)
+# library(doParallel)
 # library(BiocParallel)
 library(getopt)
-library(biglm)
+# library(biglm)
 library(bigmemory)
 
 # 测试参数
@@ -266,7 +266,7 @@ epi_index <- big.combn.epi(length(total_ma_names),2,nmar = nmar)
 remove_bigmatrix("epi_data")
 epi_data <- filebacked.big.matrix(
   nrow = nrow(TRAN),
-  ncol = ncol(combos),
+  ncol = ncol(combos)+2*nmar+ncol(Y),
   type = "double", # char是c++的单个字符
   backingfile = "epi_data.bin", 
   backingpath = dirname("epi_datai"), 
@@ -283,7 +283,10 @@ epi2 <- convertRMatrixToArmaMat(epi2)
 TRAN <- convertRMatrixToArmaMat(TRAN)
 
 tryCatch({
-  ca_epi_data(epi_data@address, combos@address, epi1, epi2, TRAN,threads = 1)
+  ca_epi_data(epi_data@address, combos@address, epi1, epi2, TRAN, 
+              Y, trdata1,trdata2, threads = 1)
 }, error = function(e) {
   print(e)
 })
+# rm(epi1,epi2,Y,trdata1,trdata2,trAdata,trDdata,TRAN,combos)
+# gc()

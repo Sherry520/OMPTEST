@@ -28,6 +28,9 @@ void ca_epi_data(Rcpp::XPtr<BigMatrix> epi_data,
                                   const arma::mat& epi1,
                                   const arma::mat& epi2,
                                   const arma::mat& TRAN,
+                                  const NumericMatrix& Y,
+                                  const NumericMatrix& trdata1,
+                                  const NumericMatrix& trdata2,
                                   int threads=0) {
   omp_set_num_threads(threads);
   
@@ -38,8 +41,49 @@ void ca_epi_data(Rcpp::XPtr<BigMatrix> epi_data,
   if (epi_data->nrow() != TRAN.n_rows) {
     Rcpp::stop("Mismatch between TRAN rows and epi_data rows.");
   }
-  if (epi_data->ncol() != combos->ncol()) {
+  if (epi_data->ncol() != combos->ncol()+1+2*trdata1.ncol()) {
     Rcpp::stop("Mismatch between combos columns and epi_data columns.");
+  }
+  
+  // copy Y, trdata1 and trdata2 to epi_data
+  #pragma omp parallel for
+  for (size_t j = 0; j < Y.ncol(); j++) {
+    if (j >= Y.ncol()) {
+      Rcpp::stop("Col index exceeds Y cols.");
+    }
+    for (size_t k = 0; k < Y.nrow(); k++){
+      if (k >= Y.nrow()) {
+        Rcpp::stop("Row index exceeds trdata1 rows.");
+      }
+      // epi_col[i] is pointer,epi_col[i][j] is value.
+      epi_col[j][k] = Y(k,j);
+    }
+  }
+  #pragma omp parallel for
+  for (size_t j = 0; j < trdata1.ncol(); j++) {
+    if (j >= trdata1.ncol()) {
+      Rcpp::stop("Col index exceeds trdata1 cols.");
+    }
+    for (size_t k = 0; k < trdata1.nrow(); k++){
+      if (k >= trdata1.nrow()) {
+        Rcpp::stop("Row index exceeds trdata1 rows.");
+      }
+      // epi_col[i] is pointer,epi_col[i][j] is value.
+      epi_col[j+1][k] = trdata1(k,j);
+    }
+  }
+  #pragma omp parallel for
+  for (size_t j = 0; j < trdata2.ncol(); j++) {
+    if (j >= trdata2.ncol()) {
+      Rcpp::stop("Col index exceeds trdata1 cols.");
+    }
+    for (size_t k = 0; k < trdata2.nrow(); k++){
+      if (k >= trdata2.nrow()) {
+        Rcpp::stop("Row index exceeds trdata2 rows.");
+      }
+      // epi_col[i] is pointer,epi_col[i][j] is value.
+      epi_col[j+1+trdata1.ncol()][k] = trdata2(k,j);
+    }
   }
 
   #pragma omp parallel for
@@ -61,7 +105,8 @@ void ca_epi_data(Rcpp::XPtr<BigMatrix> epi_data,
        if (j >= epi_data->nrow()) {
          Rcpp::stop("Row index exceeds epi_data rows.");
        }
-       epi_col[i][j] = result[j];  // 两者数据类型不一样，得将 result[j] 写入 epi_data 的第 i 列第 j 行
+       // epi_col[i] is pointer,epi_col[i][j] is value.
+       epi_col[i+Y.ncol()+trdata1.ncol()+trdata2.ncol()][j] = result[j];
   }
      // #pragma omp critical
      // {
@@ -77,6 +122,9 @@ void ca_epi_data(SEXP pEpi_data,
                  arma::mat& epi1,
                  arma::mat& epi2,
                  arma::mat& TRAN,
+                 NumericMatrix& Y,
+                 NumericMatrix& trdata1,
+                 NumericMatrix& trdata2,
                  int threads=0){
   XPtr<BigMatrix> xpEpi_data(pEpi_data);
   XPtr<BigMatrix> xpCombos(pCombos);
@@ -86,13 +134,17 @@ void ca_epi_data(SEXP pEpi_data,
   
   switch(xpEpi_data->matrix_type()) {
   case 1:
-    return ca_epi_data<char>(xpEpi_data, xpCombos, epi1, epi2, TRAN, threads);
+    return ca_epi_data<char>(xpEpi_data, xpCombos, epi1, epi2, TRAN,
+                             Y, trdata1, trdata2, threads);
   case 2:
-    return ca_epi_data<short>(xpEpi_data, xpCombos, epi1, epi2, TRAN, threads);
+    return ca_epi_data<short>(xpEpi_data, xpCombos, epi1, epi2, TRAN,
+                              Y, trdata1, trdata2, threads);
   case 4:
-    return ca_epi_data<int>(xpEpi_data, xpCombos, epi1, epi2, TRAN, threads);
+    return ca_epi_data<int>(xpEpi_data, xpCombos, epi1, epi2, TRAN,
+                            Y, trdata1, trdata2, threads);
   case 8:
-    return ca_epi_data<double>(xpEpi_data, xpCombos, epi1, epi2, TRAN, threads);
+    return ca_epi_data<double>(xpEpi_data, xpCombos, epi1, epi2, TRAN,
+                               Y, trdata1, trdata2, threads);
   default:
     throw Rcpp::exception("unknown type detected for big.matrix object!");
   }
