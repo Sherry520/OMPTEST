@@ -264,7 +264,6 @@ big.combn.epi <- function (x, m=2, nmar,FUN = NULL, simplify = TRUE, ...)
 epi_index <- big.combn.epi(length(total_ma_names),2,nmar = nmar)
 
 remove_bigmatrix("epi_data")
-rm(epi_data)
 epi_data <- filebacked.big.matrix(
   nrow = nrow(TRAN),
   ncol = ncol(combos),
@@ -275,29 +274,7 @@ epi_data <- filebacked.big.matrix(
   dimnames = c(NULL, NULL)
 )
 
-# # epi_data[,1:ncol(epi1)] <- epi1
-# # epi_data[,(ncol(epi1)+1):(ncol(epi1)+ncol(epi2))] <- epi2
-# 
-# 
-# cl <- makeCluster(no_cores)
-# registerDoParallel(cl)
-# # registerDoParallel(no_cores)
-# 
-# remove_bigmatrix("epi_data2")
-# epi_data <- filebacked.big.matrix(
-#   nrow = nrow(epi1),
-#   ncol = ncol(combos),
-#   type = "double", # char是c++的单个字符
-#   backingfile = "epi_data.bin", 
-#   backingpath = dirname("epi_datai"), 
-#   descriptorfile = "epi_data.des",
-#   dimnames = c(NULL, NULL)
-# )
-# # clusterExport(cl, c("TRAN", "epi1", "epi2", "combos"))#默认情况下clusterExport，在 中查找.GlobalEnv要导出的对象
-# # epi_data2 <- matrix(0,nrow = nrow(epi1),ncol = ncol(combos2)) # 这个矩阵占非常大内存
-# epi_data <- foreach(x=iter(combos, by='col'),.combine = "cbind",.inorder = TRUE) %dopar% {
-#   TRAN %*% (epi1[, x[1]] * epi2[, x[2]])
-# }
+# 加载C++代码
 sourceCpp(file = "./code_for_epi/source/epi.cpp")
 
 # 调用 Rcpp 函数将 R 矩阵转换为 arma::mat
