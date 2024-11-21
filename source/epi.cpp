@@ -30,7 +30,7 @@ void ca_epi_data(Rcpp::XPtr<BigMatrix> epi_data,
                                   const arma::mat& epi2,
                                   const arma::mat& TRAN,
                                   int threads=0) {
-  // omp_set_num_threads(threads);
+  omp_set_num_threads(threads);
   
   MatrixAccessor<T> epi_col = MatrixAccessor<T>(*epi_data);
   MatrixAccessor<int> combos_col = MatrixAccessor<int>(*combos);
@@ -49,7 +49,7 @@ void ca_epi_data(Rcpp::XPtr<BigMatrix> epi_data,
   Rcpp::Rcout << "epi1 index 1 0 is  " << combos_col[1][0] << std::endl;
   Rcpp::Rcout << "epi1 index 1 1 is  " << combos_col[1][1] << std::endl;
 
-  // #pragma omp parallel for
+  #pragma omp parallel for
   for(size_t i=0; i < combos->ncol();i++) {
     // 测试哈达玛积功能
     // // 创建两个 arma::vec 类型的向量
