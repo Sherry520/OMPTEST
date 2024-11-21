@@ -6,7 +6,8 @@ library(rbenchmark) # benchmark
 library(bench)
 
 # install.packages("combinat")                   # Install combinat package
-library("combinat") 
+# library("combinat") 
+library(Rcpp)
 library(data.table)
 library(foreach)
 library(doParallel)
@@ -34,16 +35,16 @@ trdata2 = trDdata
 # total_ma_names = total_ma_names
 no_cores = 4
 
-combinat::combn(1:5,2)
-utils::combn(1:5,2)
-
-combos <- combinat::combn(total_ma_names,2)
-combos2 <- utils::combn(total_ma_names,2)# 这个计数有问题
-
-
-utils::combn()
-count <- choose(2100000000,2)
-count2 <-   nCm(2100000000,2)# 这个计数有问题
+# combinat::combn(1:5,2)
+# utils::combn(1:5,2)
+# 
+# combos <- combinat::combn(total_ma_names,2)
+# combos2 <- utils::combn(total_ma_names,2)# 这个计数有问题
+# 
+# 
+# utils::combn()
+# count <- choose(2100000000,2)
+# count2 <-   nCm(2100000000,2)# 这个计数有问题
 # rMVP
 remove_bigmatrix <- function(x, desc_suffix=".desc", bin_suffix=".bin") {
   name <- basename(x)
@@ -76,8 +77,8 @@ remove_bigmatrix <- function(x, desc_suffix=".desc", bin_suffix=".bin") {
 }
 
 # utils::combn()
-x=length(total_ma_names)
-m=2
+# x=length(total_ma_names)
+# m=2
 big.combn <- function (x, m, FUN = NULL, simplify = TRUE, ...) 
 {
   stopifnot(length(m) == 1L, is.numeric(m))
@@ -263,8 +264,9 @@ big.combn.epi <- function (x, m=2, nmar,FUN = NULL, simplify = TRUE, ...)
 epi_index <- big.combn.epi(length(total_ma_names),2,nmar = nmar)
 
 remove_bigmatrix("epi_data")
+rm(epi_data)
 epi_data <- filebacked.big.matrix(
-  nrow = nrow(epi1),
+  nrow = nrow(TRAN),
   ncol = ncol(combos),
   type = "double", # char是c++的单个字符
   backingfile = "epi_data.bin", 
@@ -273,27 +275,38 @@ epi_data <- filebacked.big.matrix(
   dimnames = c(NULL, NULL)
 )
 
+# # epi_data[,1:ncol(epi1)] <- epi1
+# # epi_data[,(ncol(epi1)+1):(ncol(epi1)+ncol(epi2))] <- epi2
+# 
+# 
+# cl <- makeCluster(no_cores)
+# registerDoParallel(cl)
+# # registerDoParallel(no_cores)
+# 
+# remove_bigmatrix("epi_data2")
+# epi_data <- filebacked.big.matrix(
+#   nrow = nrow(epi1),
+#   ncol = ncol(combos),
+#   type = "double", # char是c++的单个字符
+#   backingfile = "epi_data.bin", 
+#   backingpath = dirname("epi_datai"), 
+#   descriptorfile = "epi_data.des",
+#   dimnames = c(NULL, NULL)
+# )
+# # clusterExport(cl, c("TRAN", "epi1", "epi2", "combos"))#默认情况下clusterExport，在 中查找.GlobalEnv要导出的对象
+# # epi_data2 <- matrix(0,nrow = nrow(epi1),ncol = ncol(combos2)) # 这个矩阵占非常大内存
+# epi_data <- foreach(x=iter(combos, by='col'),.combine = "cbind",.inorder = TRUE) %dopar% {
+#   TRAN %*% (epi1[, x[1]] * epi2[, x[2]])
+# }
+sourceCpp(file = "./code_for_epi/source/epi.cpp")
 
-# epi_data[,1:ncol(epi1)] <- epi1
-# epi_data[,(ncol(epi1)+1):(ncol(epi1)+ncol(epi2))] <- epi2
+# 调用 Rcpp 函数将 R 矩阵转换为 arma::mat
+epi1 <- convertRMatrixToArmaMat(epi1)
+epi2 <- convertRMatrixToArmaMat(epi2)
+TRAN <- convertRMatrixToArmaMat(TRAN)
 
-
-cl <- makeCluster(no_cores)
-registerDoParallel(cl)
-# registerDoParallel(no_cores)
-
-remove_bigmatrix("epi_data2")
-epi_data <- filebacked.big.matrix(
-  nrow = nrow(epi1),
-  ncol = ncol(combos),
-  type = "double", # char是c++的单个字符
-  backingfile = "epi_data.bin", 
-  backingpath = dirname("epi_datai"), 
-  descriptorfile = "epi_data.des",
-  dimnames = c(NULL, NULL)
-)
-# clusterExport(cl, c("TRAN", "epi1", "epi2", "combos"))#默认情况下clusterExport，在 中查找.GlobalEnv要导出的对象
-# epi_data2 <- matrix(0,nrow = nrow(epi1),ncol = ncol(combos2)) # 这个矩阵占非常大内存
-epi_data <- foreach(x=iter(combos, by='col'),.combine = "cbind",.inorder = TRUE) %dopar% {
-  TRAN %*% (epi1[, x[1]] * epi2[, x[2]])
-}
+tryCatch({
+  ca_epi_data(epi_data@address, combos@address, epi1, epi2, TRAN,threads = 1)
+}, error = function(e) {
+  print(e)
+})
