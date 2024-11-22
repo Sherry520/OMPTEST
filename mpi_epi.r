@@ -193,7 +193,7 @@ big.combn.epi <- function (x, m=2, nmar,FUN = NULL, simplify = TRUE, ...)
   if (!nofun && !is.function(FUN)) 
     stop("'FUN' must be a function or NULL")
   len.r <- length(r <- if (nofun) c(x[a][1]+1L,
-                                    as.integer(x[a][2]+nmar),
+                                    as.integer(x[a][2]+nmar+1L),
                                     (x[a][1]+1L)*nmar-sum(1L:(x[a][1]-1L))+x[a][2]+1L)
                   else FUN(x[a], ...)
                   )
