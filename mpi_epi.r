@@ -192,11 +192,12 @@ big.combn.epi <- function (x, m=2, nmar,FUN = NULL, simplify = TRUE, ...)
   nofun <- is.null(FUN)
   if (!nofun && !is.function(FUN)) 
     stop("'FUN' must be a function or NULL")
-  len.r <- length(r <- if (nofun) c(x[a][1]+1L,
-                                    as.integer(x[a][2]+nmar+1L),
-                                    (x[a][1]+1L)*nmar-sum(1L:(x[a][1]-1L))+x[a][2]+1L)
-                  else FUN(x[a], ...)
-                  )
+  len.r <- length(r <- if (nofun)
+    c(x[a][1]+1L,
+      as.integer(x[a][2]+nmar+1L),
+      (x[a][1]+1L)*nmar-sum(0L:(x[a][1]-1L))+x[a][2]-x[a][1]+1L)
+    else FUN(x[a], ...)
+  )
   count <- as.numeric(round(choose(n, m)))
   if (simplify) {
     dim.use <- if (nofun) 
@@ -245,7 +246,7 @@ big.combn.epi <- function (x, m=2, nmar,FUN = NULL, simplify = TRUE, ...)
         # x[a]
         c(x[a][1]+1L,
           as.integer(x[a][2]+nmar+1L),
-          (x[a][1]+1L)*nmar-sum(1L:(x[a][1]-1L))+x[a][2]+1L)
+          (x[a][1]+1L)*nmar-sum(0L:(x[a][1]-1L))+x[a][2]-x[a][1]+1L)
       } else FUN(x[a], ...)
       if (simplify) {
         out[, i] <- r
