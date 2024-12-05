@@ -1,8 +1,7 @@
 rm(list = ls())
 gc()
-setwd("~/test")
-# setwd("/mnt/f/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test")
-
+# setwd("~/test")
+setwd("F:/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test")
 library(rbenchmark) # benchmark
 library(bench)
 
@@ -277,19 +276,87 @@ epi_data <- filebacked.big.matrix(
 )
 
 # 加载C++代码
-sourceCpp(file = "./code_for_epi/source/epi.cpp")
+# sourceCpp(file = "/mnt/f/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test/code_for_epi/source/epi.cpp")
+sourceCpp(file = "f:/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test/code_for_epi/source/epi.cpp")
 
 # 调用 Rcpp 函数将 R 矩阵转换为 arma::mat
-epi1 <- convertRMatrixToArmaMat(epi1)
-epi2 <- convertRMatrixToArmaMat(epi2)
-TRAN <- convertRMatrixToArmaMat(TRAN)
-
+# epi1 <- convertRMatrixToArmaMat(epi1)
+# epi2 <- convertRMatrixToArmaMat(epi2)
+# TRAN <- convertRMatrixToArmaMat(TRAN)
+epi1 <- TransferMatArma(epi1)
+epi2 <- TransferMatArma(epi2)
+TRAN <- TransferMatArma(TRAN)
 # 预计算lm需要的数据
 tryCatch({
   ca_epi_data(epi_data@address, combos@address, epi1, epi2, TRAN, 
-              Y, trdata1,trdata2, threads = 4)
+              Y, trdata1,trdata2, threads = 1)
 }, error = function(e) {
   print(e)
 })
 # rm(epi1,epi2,Y,trdata1,trdata2,trAdata,trDdata,TRAN,combos)
 # gc()
+combos_index=combos[,2659]
+m=combos_index[1]
+n=combos_index[2]
+epidesign <- TRAN%*%(epi1[,m]*epi2[,n])
+subdata <- data.frame(y=Y,trdata1[,m],trdata2[,n],epi=epidesign)
+colnames(subdata)[2:3] <- total_ma_names[c(m,n)]
+
+## R subdata
+if(subdata[1,3]+subdata[1,4]==0){
+  print(subdata[,3]+subdata[,4],digits=22)
+}else{
+  print(subdata[1:5,3]+subdata[1:5,4],digits=22)
+}
+## Rcpp subdata
+index <- epi_index[,2659]
+if(epi_data[1,index[2]]+epi_data[1,index[3]]==0){
+  print(epi_data[,index[2]]+epi_data[,index[3]],digits=22)
+}else{
+  print(epi_data[1:5,index],digits=22)
+}
+
+fit.lm <- lm(as.formula(paste("y ~ -1 +",total_ma_names[m],"+",total_ma_names[n],"+ epi")),
+             data=subdata)
+print(summary(fit.lm)$coefficient,digits=22)
+
+# lm
+remove_bigmatrix("epi_eff")
+epi_eff <- filebacked.big.matrix(
+  nrow = nmar,
+  ncol = nmar,
+  type = "double", # char是c++的单个字符
+  backingfile = "epi_eff.bin",
+  backingpath = dirname("epi_eff"),
+  descriptorfile = "epi_eff.des",
+  dimnames = c(total_ma_names, total_ma_names)
+)
+
+remove_bigmatrix("epi_pval")
+epi_pval <- filebacked.big.matrix(
+  nrow = nmar,
+  ncol = nmar,
+  type = "double", # char是c++的单个字符
+  backingfile = "epi_pval.bin",
+  backingpath = dirname("epi_pval"),
+  descriptorfile = "epi_pval.des",
+  dimnames = c(total_ma_names, total_ma_names)
+)
+
+# 加载C++代码
+# sourceCpp(file = "/mnt/f/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test/code_for_epi/source/epi.cpp")
+sourceCpp(file = "f:/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test/code_for_epi/source/epi.cpp")
+
+# result <- ca_epi_pval_eff(epi_pval@address,epi_eff@address,epi_data@address,epi_index@address,1)
+
+
+# 对于存在正交的标记编码，反应在trdata中是互为相反数，不该输出epi的系数。
+
+# 计算pval eff
+tryCatch({
+  result = ca_epi_pval_eff(epi_pval@address,epi_eff@address,epi_data@address,epi_index@address,1)
+}, error = function(e) {
+  print(e)
+})
+print(result,digits=22)
+
