@@ -1,17 +1,17 @@
 #include <RcppArmadillo.h>
-#include <RcppEigen.h>
+// #include <RcppEigen.h>
 #include <Rcpp.h>
 #include <bigmemory/MatrixAccessor.hpp>
 #include <omp.h>
 
 // [[Rcpp::depends(RcppArmadillo)]]
-// [[Rcpp::depends(RcppEigen)]]
+// // [[Rcpp::depends(RcppEigen)]]
 // [[Rcpp::depends(bigmemory)]]
 
 using namespace std;
 using namespace Rcpp;
 using namespace arma;
-using namespace Eigen;
+// using namespace Eigen;
 
 // using namespace Eigen::Map;
 // using namespace Eigen::MatrixXd;
@@ -441,7 +441,7 @@ Rcpp::List lm_armadillo_with_p_values(arma::mat mat) {
     // Named("residuals") = residuals,
     Named("standard_errors") = se_beta,
     Named("t_stat") = t_stat,
-    Named("p_values") = p_values,
+    Named("p_values") = p_values
     // Named("r_squared") = R_squared,
     // Named("Adjusted r_squared") = adjusted_R_squared
   );
