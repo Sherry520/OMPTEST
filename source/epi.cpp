@@ -371,13 +371,13 @@ Rcpp::List lm_armadillo_with_p_values(arma::mat mat) {
 
   // 解回归系数：beta = R^(-1) * Q^T * y
 
-  // 计算广义逆矩阵
-  arma::mat R_pinv = pinv(R);
+  // // 计算广义逆矩阵
+  // arma::mat R_pinv = inv(R);
 
   // // 计算回归系数
   // arma::vec beta = R_pinv * Q.t() * y_vec;
   // 计算回归系数
-  arma::vec beta = pinv(R) * Q.t() * y_vec;
+  arma::vec beta = inv(R) * Q.t() * y_vec;
 
   // 计算预测值
   arma::colvec y_hat = X_mat * beta;
