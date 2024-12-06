@@ -454,6 +454,7 @@ Rcpp::List ca_epi_pval_eff(Rcpp::XPtr<BigMatrix> epi_pval,
                  Rcpp::XPtr<BigMatrix> epi_eff,
                  const Rcpp::XPtr<BigMatrix> epi_data,
                  const Rcpp::XPtr<BigMatrix> epi_index,
+                 const Rcpp::XPtr<BigMatrix> combos,
                  int threads=0) {
   omp_set_num_threads(threads);
   
@@ -461,6 +462,7 @@ Rcpp::List ca_epi_pval_eff(Rcpp::XPtr<BigMatrix> epi_pval,
   MatrixAccessor<double> eff_col = MatrixAccessor<double>(*epi_eff);
   MatrixAccessor<double> epi_col = MatrixAccessor<double>(*epi_data);
   MatrixAccessor<int> epi_index_col = MatrixAccessor<int>(*epi_index);
+  MatrixAccessor<int> combos_col = MatrixAccessor<int>(*combos);
   
   arma::icolvec subdata_epi_index;
   Rcpp::List result;
@@ -472,62 +474,39 @@ Rcpp::List ca_epi_pval_eff(Rcpp::XPtr<BigMatrix> epi_pval,
   // Rcpp::Environment base("package:base");
   // Rcpp::Function colnames = base["colnames"];
   // Rcpp::Function c = base["c"];
-  
-  // for(size_t i=0; i < epi_index->ncol();i++) {
+  #pragma omp parallel for
+  for(size_t i=0; i < epi_index->ncol();i++) {
     
-  for(size_t i=2658; i < 2659;i++) {
+  // for(size_t i=2658; i < 2660;i++) {
     try {
       arma::mat subdata = extract_by_column_index(epi_index,i,epi_data);
       result = lm_armadillo_with_p_values(subdata);
-      // // NumericMatrix rsubdata =Rcpp::wrap(subdata);
-      // Rcpp::NumericMatrix mat(subdata.n_rows, subdata.n_cols-1);
-      // std::copy(subdata.begin(), subdata.end(), mat.begin());
-      // 
-      // int nrow = mat.nrow();
-      // int ncol = mat.ncol();
-      // 
-      // NumericVector first_col(nrow);
-      // NumericMatrix rest_mat(nrow, ncol - 1);
-      // 
-      // // 提取第一列
-      // for (int i = 0; i < nrow; ++i) {
-      //   first_col[i] = mat(i, 0);
-      // }
-      // 
-      // // 提取其余列
-      // for (int i = 0; i < nrow; ++i) {
-      //   for (int j = 1; j < ncol; ++j) {
-      //     rest_mat(i, j - 1) = mat(i, j);
-      //   }
-      // }
-      // 
-      // // 获取矩阵的属性列表
-      // List attr_list = rest_mat.attr("attributes");
-      // 
-      // // 添加新的列名属性
-      // attr_list["colnames"] = CharacterVector::creat("M1","M2","epi");
-      // 
-      // // 将属性列表赋给矩阵
-      // rest_mat.attr("attributes") = attr_list;
-      // 
-      // // 将C++数据转换为R对象
-      // Environment base("package:stats");
-      // Function lm_fun = base["lm"];
-      // Function summary_fun = base["summary"];
-      // 
-      // // 拟合线性模型
-      // Rcpp::List model = lm_fun(Named("formula", y ~ M1+M2+epi), Named("data", DataFrame::create(Named("y", first_col), Named("X", rest_mat))));
       
-      // // 获取系数
-      // Rcpp::NumericVector coefficients = summary_fun(model)["coefficients"];
-  
-      
-      // double a = 1/3;
-      // double b =-1/3;
-      // Rcpp::Rcout << " a 1/3 + b -1/3 = " << a+b  << std::endl;
-      // // 下边这样写会报错<<重载
-      // Rcpp::Rcout << "lm result for epi_index " << i << " is " << result << std::endl;
-    // 正常处理代码
+      arma::vec firstVec = Rcpp::as<arma::vec>(result[0]);
+      int lengthOfFirstVec = firstVec.n_elem;
+
+      size_t row_index = static_cast<size_t>(combos_col[i][0]-1);
+      size_t col_index = static_cast<size_t>(combos_col[i][1]-1);
+      if(!(row_index < epi_eff->nrow() && col_index < epi_eff->ncol())){
+        std::cerr << "Index out of bounds: " << row_index << ", " << col_index << std::endl;
+      }
+      if(lengthOfFirstVec < 3){ // 不存在互作时，p=1, eff=0
+        Rcpp::Rcout << "epi does not exist, length result is " << lengthOfFirstVec << std::endl;
+        pval_col[col_index][row_index] = 1;
+        eff_col[col_index][row_index] = 0;
+      }else if(lengthOfFirstVec == 3){
+        Rcpp::Rcout << "epi exist, length result is " << lengthOfFirstVec << std::endl;
+        arma::colvec res_pvalues = Rcpp::as<arma::colvec>(result["p_values"]);
+        arma::colvec res_effs = Rcpp::as<arma::colvec>(result["coefficients"]);
+        double p_value = res_pvalues[2];
+        double eff = res_effs[2];
+        pval_col[col_index][row_index] = p_value;
+        eff_col[col_index][row_index] = eff;
+        Rcpp::Rcout << "pval_col is " << pval_col[col_index][row_index] << std::endl;
+        Rcpp::Rcout << "epi p_value in result is " << p_value << std::endl;
+      }else{
+        stop("Number of element in result does not match rank of X_mat.");
+      }
     } catch (const std::exception& e) {
       j++;
       Rcpp::Rcout << "Processed " << i << "st epi_index error"<< std::endl;
@@ -535,52 +514,11 @@ Rcpp::List ca_epi_pval_eff(Rcpp::XPtr<BigMatrix> epi_pval,
       // 可以选择在这里处理异常，比如记录日志或跳过
       continue; // 跳过当前迭代，继续下一个
     }
-    
-    
-    
-    // // 打开文件
-    // std::ofstream file("lm_result.list.txt");
-    // if (!file.is_open()) {
-    //   Rcpp::stop("Unable to open file!");
-    // }
-    // 
-    // // 遍历列表并写入文件
-    // for (int i = 0; i < result.size(); ++i) {
-    //   file << "Element " << i << ": " << result[i] << std::endl;
-    // }
-    // 
-    // // 关闭文件
-    // file.close();
   }
   Rcpp::Rcout << j << "caught exception times" << std::endl;
   // return model;
   return result;
   // return NULL;
-    
-    // // 获取big.matrix的内存地址
-    // double* mat = (double*)xpMat->matrix();
-    // 
-    // // 创建arma::mat对象，不复制内存
-    // arma::mat M(mat, xpMat->nrow(), xpMat->ncol(), false);
-    // 
-    // // 提取指定列
-    // return M.cols(colidx);
-    // 
-    // 
-    // // matrix *
-    // arma::colvec result = TRAN * hadamard_product;
-    // 
-    // // apply the result to big.matrix
-    // if (result.n_elem != epi_data->nrow()) {
-    //   Rcpp::stop("Result vector length does not match epi_data row count.");
-    // }
-    // for (size_t j = 0; j < result.n_elem; j++) {
-    //   if (j >= epi_data->nrow()) {
-    //     Rcpp::stop("Row index exceeds epi_data rows.");
-    //   }
-    //   // epi_col[i] is pointer,epi_col[i][j] is value.
-    //   epi_col[i+Y.ncol()+trdata1.ncol()+trdata2.ncol()][j] = result[j];
-    // }
     
     // #pragma omp critical
     // {

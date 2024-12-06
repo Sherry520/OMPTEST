@@ -354,7 +354,7 @@ sourceCpp(file = "f:/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31
 
 # 计算pval eff
 tryCatch({
-  result = ca_epi_pval_eff(epi_pval@address,epi_eff@address,epi_data@address,epi_index@address,1)
+  result = ca_epi_pval_eff(epi_pval@address,epi_eff@address,epi_data@address,epi_index@address,combos@address,1)
 }, error = function(e) {
   print(e)
 })
