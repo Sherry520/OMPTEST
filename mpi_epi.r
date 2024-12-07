@@ -360,3 +360,34 @@ tryCatch({
 })
 print(result,digits=22)
 
+# 将big.matrix写入到文本文件中 ####
+## 打开一个文本文件
+con <- file("epi_pval.txt", "w")
+
+# 写入列名
+cat(paste(total_ma_names, collapse = " "), file = con, sep = "\n")
+
+# 逐行写入
+for (i in 1:nrow(epi_pval)) {
+  row_data <- as.vector(epi_pval[i, ])
+  cat(paste(total_ma_names[i],paste(row_data, collapse = " "),collapse = " "), file = con, sep = "\n")
+}
+
+## 关闭文件
+close(con)
+
+## 打开一个文本文件
+con <- file("epi_eff.txt", "w")
+
+# 写入列名
+cat(paste(total_ma_names, collapse = " "), file = con, sep = "\n")
+
+# 逐行写入
+for (i in 1:nrow(epi_eff)) {
+  row_data <- as.vector(epi_eff[i, ])
+  cat(paste(total_ma_names[i],paste(row_data, collapse = " "),collapse = " "), file = con, sep = "\n")
+}
+
+## 关闭文件
+close(con)
+
