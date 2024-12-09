@@ -1,8 +1,9 @@
 rm(list = ls())
 gc()
 # setwd("~/test")
-setwd("F:/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test")
-library(rbenchmark) # benchmark
+# setwd("F:/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test")
+setwd("/mnt/f/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test")
+# library(rbenchmark) # benchmark
 library(bench)
 
 # install.packages("combinat")                   # Install combinat package
@@ -276,8 +277,8 @@ epi_data <- filebacked.big.matrix(
 )
 
 # 加载C++代码
-# sourceCpp(file = "/mnt/f/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test/code_for_epi/source/epi.cpp")
-sourceCpp(file = "f:/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test/code_for_epi/source/epi.cpp")
+sourceCpp(file = "/mnt/f/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test/code_for_epi/source/epi.cpp")
+# sourceCpp(file = "f:/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test/code_for_epi/source/epi.cpp")
 
 # 调用 Rcpp 函数将 R 矩阵转换为 arma::mat
 # epi1 <- convertRMatrixToArmaMat(epi1)
@@ -289,36 +290,36 @@ TRAN <- TransferMatArma(TRAN)
 # 预计算lm需要的数据
 tryCatch({
   ca_epi_data(epi_data@address, combos@address, epi1, epi2, TRAN, 
-              Y, trdata1,trdata2, threads = 1)
+              Y, trdata1,trdata2, threads = 4)
 }, error = function(e) {
   print(e)
 })
 # rm(epi1,epi2,Y,trdata1,trdata2,trAdata,trDdata,TRAN,combos)
 # gc()
-combos_index=combos[,2659]
-m=combos_index[1]
-n=combos_index[2]
-epidesign <- TRAN%*%(epi1[,m]*epi2[,n])
-subdata <- data.frame(y=Y,trdata1[,m],trdata2[,n],epi=epidesign)
-colnames(subdata)[2:3] <- total_ma_names[c(m,n)]
-
-## R subdata
-if(subdata[1,3]+subdata[1,4]==0){
-  print(subdata[,3]+subdata[,4],digits=22)
-}else{
-  print(subdata[1:5,3]+subdata[1:5,4],digits=22)
-}
-## Rcpp subdata
-index <- epi_index[,2659]
-if(epi_data[1,index[2]]+epi_data[1,index[3]]==0){
-  print(epi_data[,index[2]]+epi_data[,index[3]],digits=22)
-}else{
-  print(epi_data[1:5,index],digits=22)
-}
-
-fit.lm <- lm(as.formula(paste("y ~ -1 +",total_ma_names[m],"+",total_ma_names[n],"+ epi")),
-             data=subdata)
-print(summary(fit.lm)$coefficient,digits=22)
+# combos_index=combos[,2659]
+# m=combos_index[1]
+# n=combos_index[2]
+# epidesign <- TRAN%*%(epi1[,m]*epi2[,n])
+# subdata <- data.frame(y=Y,trdata1[,m],trdata2[,n],epi=epidesign)
+# colnames(subdata)[2:3] <- total_ma_names[c(m,n)]
+# 
+# ## R subdata
+# if(subdata[1,3]+subdata[1,4]==0){
+#   print(subdata[,3]+subdata[,4],digits=22)
+# }else{
+#   print(subdata[1:5,3]+subdata[1:5,4],digits=22)
+# }
+# ## Rcpp subdata
+# index <- epi_index[,2659]
+# if(epi_data[1,index[2]]+epi_data[1,index[3]]==0){
+#   print(epi_data[,index[2]]+epi_data[,index[3]],digits=22)
+# }else{
+#   print(epi_data[1:5,index],digits=22)
+# }
+# 
+# fit.lm <- lm(as.formula(paste("y ~ -1 +",total_ma_names[m],"+",total_ma_names[n],"+ epi")),
+#              data=subdata)
+# print(summary(fit.lm)$coefficient,digits=22)
 
 # lm
 remove_bigmatrix("epi_eff")
@@ -344,8 +345,8 @@ epi_pval <- filebacked.big.matrix(
 )
 
 # 加载C++代码
-# sourceCpp(file = "/mnt/f/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test/code_for_epi/source/epi.cpp")
-sourceCpp(file = "f:/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test/code_for_epi/source/epi.cpp")
+sourceCpp(file = "/mnt/f/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test/code_for_epi/source/epi.cpp")
+# sourceCpp(file = "f:/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test/code_for_epi/source/epi.cpp")
 
 # result <- ca_epi_pval_eff(epi_pval@address,epi_eff@address,epi_data@address,epi_index@address,1)
 
@@ -354,15 +355,70 @@ sourceCpp(file = "f:/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31
 
 # 计算pval eff
 tryCatch({
-  result = ca_epi_pval_eff(epi_pval@address,epi_eff@address,epi_data@address,epi_index@address,combos@address,1)
+  ca_epi_pval_eff(epi_pval@address,epi_eff@address,epi_data@address,epi_index@address,combos@address,4)
 }, error = function(e) {
   print(e)
 })
-print(result,digits=22)
+
+## rcpp muti-threads性能测试 ####
+for_ad <- function(){
+  # scan for additive-by-dominance epistatic effects
+  
+  res_eff <- matrix(0,nmar,nmar)
+  rownames(res_eff) <- total_ma_names
+  colnames(res_eff) <- total_ma_names
+  res_pval <- res_eff
+  
+  for (m in 1:(nmar-1)) {
+    for (n in (m+1):nmar) {
+      epidesign <- TRAN%*%(Adata[,m]*Ddata[,n])
+      subdata <- data.frame(y=Y,trAdata[,m],trDdata[,n],epi=epidesign)
+      colnames(subdata)[2:3] <- total_ma_names[c(m,n)]
+      # subdata[,2] <- as.factor(subdata[,2])
+      # subdata[,3] <- as.factor(subdata[,3])
+      # subdata[,4] <- as.factor(subdata[,4])
+      fit.lm <- lm(as.formula(paste("y ~ -1 +",total_ma_names[m],"+",total_ma_names[n],"+ epi")),
+                   data=subdata)
+      infomat <- summary(fit.lm)$coefficient
+      if ("epi"%in%rownames(infomat))
+      {
+        res_eff[m,n] <- summary(fit.lm)$coefficient["epi",1]
+        res_pval[m,n] <- summary(fit.lm)$coefficient["epi",4]
+      }else{
+        res_pval[m,n] <- 1
+      }
+      # fit.lm <- biglm(as.formula(paste("y ~ -1 +",total_ma_names[m],"+",total_ma_names[n],"+ epi")),
+      #              data=subdata)
+      # infomat <- summary(fit.lm)$mat
+      # if ("epi"%in%rownames(infomat))
+      # {
+      #   res_eff[m,n] <- summary(fit.lm)$mat["epi","Coef"]
+      #   res_pval[m,n] <- summary(fit.lm)$mat["epi","p"]
+      # }else{
+      #   res_pval[m,n] <- 1
+      # }
+    }
+    
+    cat("Epistasis scan invloving Marker",m,"completed\n")
+  }
+  
+  # write.table(res_eff,paste0("MapQTL_MPH_effect_ad_",trait,"_forad.txt"),quote=FALSE)
+  # write.table(res_pval,paste0("MapQTL_MPH_pval_ad_",trait,"_forad.txt"),quote=FALSE)
+}
+bench::mark(
+  rcpp_thread4 = ca_epi_pval_eff(epi_pval@address,epi_eff@address,epi_data@address,epi_index@address,combos@address,4),
+  rcpp_thread1 = ca_epi_pval_eff(epi_pval@address,epi_eff@address,epi_data@address,epi_index@address,combos@address,1),
+  for_ad = for_ad(),
+  check = FALSE,
+  min_time=Inf,
+  iterations=10,
+  memory = FALSE
+)
+
 
 # 将big.matrix写入到文本文件中 ####
 ## 打开一个文本文件
-con <- file("epi_pval.txt", "w")
+con <- file("epi_pval_thread4.txt", "w")
 
 # 写入列名
 cat(paste(total_ma_names, collapse = " "), file = con, sep = "\n")
@@ -377,7 +433,7 @@ for (i in 1:nrow(epi_pval)) {
 close(con)
 
 ## 打开一个文本文件
-con <- file("epi_eff.txt", "w")
+con <- file("epi_eff_thread4.txt", "w")
 
 # 写入列名
 cat(paste(total_ma_names, collapse = " "), file = con, sep = "\n")

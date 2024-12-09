@@ -174,7 +174,8 @@ arma::mat extract_by_column_index(SEXP source_bigmat, int column_index, SEXP tar
   
   // 检查列索引范围
   if (column_index < 0 || column_index >= source_ncols) {
-    Rcpp::stop("Column index out of bounds.");
+    // Rcpp::stop("Column index out of bounds.");
+    Rcpp::Rcout << "Column index out of bounds." << std::endl;
   }
   
   // 提取索引列
@@ -202,7 +203,9 @@ arma::mat extract_by_column_index(SEXP source_bigmat, int column_index, SEXP tar
     if (col_index < 0 || static_cast<size_t>(col_index) >= target_ncols) {
       Rcpp::Rcout << "col_index is " << col_index << std::endl;
       Rcpp::Rcout << "i is " << i << std::endl;
-      Rcpp::stop("Index out of bounds in souce matrix.");
+      // Rcpp::stop("Index out of bounds in souce matrix.");
+      Rcpp::Rcout << "Index out of bounds in souce matrix." << std::endl;
+      continue;
     }
     
     for (size_t j = 0; j < target_nrows; j++) {
@@ -316,10 +319,10 @@ Rcpp::List lm_armadillo_with_p_values(arma::mat mat) {
   // seprate matrix to y and x
   arma::mat X_mat = mat.cols(1, (mat.n_cols - 1));  // X 矩阵 (自变量)
   if(arma::rank(X_mat) < X_mat.n_cols-1){ // arma::rank计算的秩比实际小1
-    Rcpp::Rcout << "rank(X_mat) is " << arma::rank(X_mat) << std::endl;
-    Rcpp::Rcout << "head(X_mat) is " << X_mat.rows(0,5) << std::endl;
+    // Rcpp::Rcout << "rank(X_mat) is " << arma::rank(X_mat) << std::endl;
+    // Rcpp::Rcout << "head(X_mat) is " << X_mat.rows(0,5) << std::endl;
     X_mat = mat.cols(1, (mat.n_cols - 2));
-    Rcpp::Rcout << "head(X_mat) is " << X_mat.rows(0,5) << std::endl;
+    // Rcpp::Rcout << "head(X_mat) is " << X_mat.rows(0,5) << std::endl;
   }
   arma::colvec y_vec = mat.col(0);  // y 向量 (因变量)
   // Rcpp::Rcout << "lm data of X_mat is " << X_mat << std::endl;
@@ -327,7 +330,8 @@ Rcpp::List lm_armadillo_with_p_values(arma::mat mat) {
 
   // 检查矩阵维度
   if (X_mat.n_rows != y_vec.n_rows) {
-    stop("Number of rows in X does not match length of y.");
+    // stop("Number of rows in X does not match length of y.");
+    Rcpp::Rcout << "Number of rows in X does not match length of y." << std::endl;
   }
 
 
@@ -367,7 +371,7 @@ Rcpp::List lm_armadillo_with_p_values(arma::mat mat) {
   arma::qr_econ(Q,R,X_mat); // 将 X 分解为 Q 和 R
   // arma::qr(Q,R,X_mat); // 将 X 分解为 Q 和 R
   // Rcpp::Rcout << "Q is " << Q << std::endl;
-  Rcpp::Rcout << "R " << R << std::endl;
+  // Rcpp::Rcout << "R " << R << std::endl;
 
   // 解回归系数：beta = R^(-1) * Q^T * y
 
@@ -450,7 +454,7 @@ Rcpp::List lm_armadillo_with_p_values(arma::mat mat) {
 // Logic for epi_eff_pval
 
 // [[Rcpp::export]]
-Rcpp::List ca_epi_pval_eff(Rcpp::XPtr<BigMatrix> epi_pval,
+void ca_epi_pval_eff(Rcpp::XPtr<BigMatrix> epi_pval,
                  Rcpp::XPtr<BigMatrix> epi_eff,
                  const Rcpp::XPtr<BigMatrix> epi_data,
                  const Rcpp::XPtr<BigMatrix> epi_index,
@@ -465,7 +469,7 @@ Rcpp::List ca_epi_pval_eff(Rcpp::XPtr<BigMatrix> epi_pval,
   MatrixAccessor<int> combos_col = MatrixAccessor<int>(*combos);
   
   arma::icolvec subdata_epi_index;
-  Rcpp::List result;
+  // Rcpp::List result;
   size_t j=0;
   
   // Rcpp::Environment stats("package:stats");
@@ -480,7 +484,7 @@ Rcpp::List ca_epi_pval_eff(Rcpp::XPtr<BigMatrix> epi_pval,
   // for(size_t i=2658; i < 2660;i++) {
     try {
       arma::mat subdata = extract_by_column_index(epi_index,i,epi_data);
-      result = lm_armadillo_with_p_values(subdata);
+      Rcpp::List result = lm_armadillo_with_p_values(subdata);
       
       arma::vec firstVec = Rcpp::as<arma::vec>(result[0]);
       int lengthOfFirstVec = firstVec.n_elem;
@@ -491,33 +495,35 @@ Rcpp::List ca_epi_pval_eff(Rcpp::XPtr<BigMatrix> epi_pval,
         std::cerr << "Index out of bounds: " << row_index << ", " << col_index << std::endl;
       }
       if(lengthOfFirstVec < 3){ // 不存在互作时，p=1, eff=0
-        Rcpp::Rcout << "epi does not exist, length result is " << lengthOfFirstVec << std::endl;
+        // Rcpp::Rcout << "epi does not exist, length result is " << lengthOfFirstVec << std::endl;
         pval_col[col_index][row_index] = 1;
         eff_col[col_index][row_index] = 0;
       }else if(lengthOfFirstVec == 3){
-        Rcpp::Rcout << "epi exist, length result is " << lengthOfFirstVec << std::endl;
+        // Rcpp::Rcout << "epi exist, length result is " << lengthOfFirstVec << std::endl;
         arma::colvec res_pvalues = Rcpp::as<arma::colvec>(result["p_values"]);
         arma::colvec res_effs = Rcpp::as<arma::colvec>(result["coefficients"]);
         double p_value = res_pvalues[2];
         double eff = res_effs[2];
         pval_col[col_index][row_index] = p_value;
         eff_col[col_index][row_index] = eff;
-        Rcpp::Rcout << "pval_col is " << pval_col[col_index][row_index] << std::endl;
-        Rcpp::Rcout << "epi p_value in result is " << p_value << std::endl;
+        // Rcpp::Rcout << "pval_col is " << pval_col[col_index][row_index] << std::endl;
+        // Rcpp::Rcout << "epi p_value in result is " << p_value << std::endl;
       }else{
         stop("Number of element in result does not match rank of X_mat.");
       }
     } catch (const std::exception& e) {
+#pragma omp critical
       j++;
       Rcpp::Rcout << "Processed " << i << "st epi_index error"<< std::endl;
       Rcpp::Rcout << "Caught exception: " << e.what() << std::endl;
       // 可以选择在这里处理异常，比如记录日志或跳过
       continue; // 跳过当前迭代，继续下一个
     }
+    printf("i = %d, I am Thread %d\n", i, omp_get_thread_num());
   }
   Rcpp::Rcout << j << "caught exception times" << std::endl;
   // return model;
-  return result;
+  // return result;
   // return NULL;
     
     // #pragma omp critical
