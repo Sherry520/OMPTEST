@@ -216,6 +216,87 @@ arma::mat extract_by_column_index(Rcpp::XPtr<BigMatrix> pSourceMat, int column_i
   return result;
 }
 
+Rcpp::List lm_armadillo_with_p_values2(arma::mat mat) {
+  // seprate matrix to y and x
+  arma::mat X_mat = mat.cols(1, (mat.n_cols - 1));  // X 矩阵 (自变量)
+  if(arma::rank(X_mat) < X_mat.n_cols-1){ // arma::rank计算的秩比实际小1
+    // Rcpp::Rcout << "rank(X_mat) is " << arma::rank(X_mat) << std::endl;
+    // Rcpp::Rcout << "head(X_mat) is " << X_mat.rows(0,5) << std::endl;
+    X_mat = mat.cols(1, (mat.n_cols - 2));
+    // Rcpp::Rcout << "head(X_mat) is " << X_mat.rows(0,5) << std::endl;
+  }
+  arma::colvec y_vec = mat.col(0);  // y 向量 (因变量)
+  // Rcpp::Rcout << "lm data of X_mat is " << X_mat << std::endl;
+  // Rcpp::Rcout << "lm data of y_mat is " << y_vec << std::endl;
+  
+  // 检查矩阵维度
+  if (X_mat.n_rows != y_vec.n_rows) {
+    // stop("Number of rows in X does not match length of y.");
+    Rcpp::Rcout << "Number of rows in X does not match length of y." << std::endl;
+  }
+  
+  // 计算回归系数
+  arma::vec beta = arma::solve(X_mat,y_vec);
+  
+  // 计算预测值
+  arma::colvec y_hat = X_mat * beta;
+  
+  // 计算残差
+  arma::colvec residuals = y_vec - y_hat;
+  
+  // 计算残差方差
+  double sigma_squared = dot(residuals, residuals) / (y_vec.n_elem - X_mat.n_cols);
+  
+  // 计算方差-协方差矩阵
+  arma::mat X_transpose = X_mat.t();
+  arma::mat var_beta = sigma_squared * inv(X_transpose * X_mat);
+  
+  // 计算标准误
+  colvec se_beta = sqrt(var_beta.diag());
+  
+  // 计算 p 值 (双尾检验)
+  int n = X_mat.n_rows;  // 样本数
+  int p = X_mat.n_cols;  // 预测变量数
+  int df = n - p;        // 自由度
+  
+  // 计算 t 统计量
+  arma::colvec t_stat = beta / se_beta;
+  
+  NumericVector p_values(t_stat.n_elem);  // 双尾 p 值
+  // 遍历 t_stat 计算对应的 p 值
+  for (size_t i = 0; i < t_stat.n_elem; ++i) {
+    // 使用 abs(t_stat[i]) 计算单尾 p 值，并乘以 2 计算双尾 p 值
+    p_values[i] = 2 * (1 - R::pt(std::abs(t_stat[i]), df,true,false));
+  }
+  
+  // // 计算TSS
+  // double mean_y = mean(y_vec);
+  // vec centered_y = y_vec - mean_y;
+  // double TSS = dot(centered_y, centered_y);
+  // 
+  // // 计算RSS
+  // double RSS = dot(residuals, residuals);
+  // 
+  // // 计算SSR
+  // double SSR = TSS - RSS;
+  // 
+  // // 计算R-squared
+  // double R_squared = SSR / TSS;
+  // 
+  // // 计算调整后的R-square
+  // double adjusted_R_squared = 1 - (1 - R_squared) * (n - 1) / (n - p - 1);
+  
+  // 返回结果
+  return List::create(
+    Named("coefficients") = beta,
+    // Named("residuals") = residuals,
+    Named("standard_errors") = se_beta,
+    Named("t_stat") = t_stat,
+    Named("p_values") = p_values
+  // Named("r_squared") = R_squared,
+  // Named("Adjusted r_squared") = adjusted_R_squared
+  );
+}
 Rcpp::List lm_armadillo_with_p_values(arma::mat mat) {
   // // Eigen计算的se、t统计量、p值不对
   // Eigen::MatrixXd eigen_mat = Eigen::Map<Eigen::MatrixXd>(mat.memptr(),
