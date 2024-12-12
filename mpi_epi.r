@@ -1,14 +1,15 @@
 rm(list = ls())
 gc()
 # setwd("~/test")
-# setwd("F:/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test")
-setwd("/mnt/f/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test")
+setwd("F:/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test")
+# setwd("/mnt/f/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test")
 # library(rbenchmark) # benchmark
 library(bench)
 
 # install.packages("combinat")                   # Install combinat package
 # library("combinat") 
 library(Rcpp)
+sourceCpp(file = "f:/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test/code_for_epi/source/epi.cpp")
 # library(data.table)
 # library(foreach)
 # library(doParallel)
@@ -277,7 +278,7 @@ epi_data <- filebacked.big.matrix(
 )
 
 # 加载C++代码
-sourceCpp(file = "/mnt/f/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test/code_for_epi/source/epi.cpp")
+# sourceCpp(file = "/mnt/f/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test/code_for_epi/source/epi.cpp")
 # sourceCpp(file = "f:/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test/code_for_epi/source/epi.cpp")
 
 # 调用 Rcpp 函数将 R 矩阵转换为 arma::mat
@@ -345,7 +346,7 @@ epi_pval <- filebacked.big.matrix(
 )
 
 # 加载C++代码
-sourceCpp(file = "/mnt/f/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test/code_for_epi/source/epi.cpp")
+# sourceCpp(file = "/mnt/f/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test/code_for_epi/source/epi.cpp")
 # sourceCpp(file = "f:/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test/code_for_epi/source/epi.cpp")
 
 # result <- ca_epi_pval_eff(epi_pval@address,epi_eff@address,epi_data@address,epi_index@address,1)
