@@ -164,9 +164,9 @@ void ca_epi_data(SEXP pEpi_data,
 }
 
 // subset matrix from epi_data big.matrix with index from epi_index big.matrix
-arma::mat extract_by_column_index(SEXP source_bigmat, int column_index, SEXP target_bigmat) {
+arma::mat extract_by_column_index(Rcpp::XPtr<BigMatrix> pSourceMat, int column_index, Rcpp::XPtr<BigMatrix> pTargetMat) {
   // 获取 source_bigmat 对象（用于提取索引）
-  Rcpp::XPtr<BigMatrix> pSourceMat(source_bigmat);
+  // Rcpp::XPtr<BigMatrix> pSourceMat(source_bigmat);
   MatrixAccessor<int> source_col = MatrixAccessor<int>(*pSourceMat);
   
   size_t source_nrows = pSourceMat->nrow();
@@ -186,7 +186,7 @@ arma::mat extract_by_column_index(SEXP source_bigmat, int column_index, SEXP tar
   }
   
   // 获取 target_bigmat 对象
-  Rcpp::XPtr<BigMatrix> pTargetMat(target_bigmat);
+  // Rcpp::XPtr<BigMatrix> pTargetMat(target_bigmat);
   MatrixAccessor<double> target_col = MatrixAccessor<double>(*pTargetMat);
   
   size_t target_nrows = pTargetMat->nrow();
