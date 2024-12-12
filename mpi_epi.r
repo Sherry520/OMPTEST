@@ -1,7 +1,7 @@
 rm(list = ls())
 gc()
 # setwd("~/test")
-setwd("F:/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test")
+setwd("F:/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test/code_for_epi/output/")
 # setwd("/mnt/f/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test")
 # library(rbenchmark) # benchmark
 library(bench)
@@ -9,7 +9,7 @@ library(bench)
 # install.packages("combinat")                   # Install combinat package
 # library("combinat") 
 library(Rcpp)
-sourceCpp(file = "f:/07-CAUS/01-Linux-service/project_18DH-heterosis/Analysis/31-gwas_mph/test/code_for_epi/source/epi.cpp")
+sourceCpp(file = "../source/epi.cpp")
 # library(data.table)
 # library(foreach)
 # library(doParallel)
@@ -20,13 +20,13 @@ library(bigmemory)
 
 # 测试参数
 trait = "PH"
-load(file = "Adata.RData")
-load(file = "Ddata.RData")
-load(paste0("trAdata_",trait,".RData"))
-load(paste0("trDdata_",trait,".RData"))
-load(paste0("TRAN_",trait,".RData"))
-load(paste0("Y_",trait,".RData"))
-load(file = "./total_ma_names.rdata")
+load(file = "../data/Adata.RData")
+load(file = "../data/Ddata.RData")
+load(paste0("../data/trAdata_",trait,".RData"))
+load(paste0("../data/trDdata_",trait,".RData"))
+load(paste0("../data/TRAN_",trait,".RData"))
+load(paste0("../data/Y_",trait,".RData"))
+load(file = "../data/total_ma_names.rdata")
 nmar=500
 TRAN = TRAN
 eff_type = "ad"
